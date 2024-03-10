@@ -4,6 +4,8 @@
 <title>pulseox</title>
 <link rel="stylesheet" href="pulseox.css">
 <script src="pulseox.js" defer></script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <h1>pulseox</h1>
@@ -17,8 +19,8 @@ RSSI: <span id="rssi_text">?</span>dBm<br>
 <hr>
 <button onclick="ac.resume()">Start Audio</button>
 <hr>
-Red: <meter id="red_bar"></meter><br>
-IR:  <meter id="ir_bar"></meter><br>
+Red: <meter id="red_bar" min="-200" max="200"></meter><br>
+IR:  <meter id="ir_bar" min="-200" max="200"></meter><br>
 <hr>
 <canvas id="data_plot" width="800" height="400"></canvas>
 </body>

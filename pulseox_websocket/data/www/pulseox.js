@@ -67,11 +67,6 @@ function ws_msg(e) {
 		
 		//hist[hist_idx] = [msg.ir,msg.red];
 		//hist_idx = ++hist_idx % max_hist;
-		
-		ir_bar.min = -100; //Math.min(msg.ir,ir_bar.min)*minmax_smooth + msg.ir*(1-minmax_smooth);
-		red_bar.min = -100; // Math.min(msg.red,red_bar.min)*minmax_smooth + msg.red*(1-minmax_smooth);
-		ir_bar.max = 100; // Math.max(msg.ir,ir_bar.max)*minmax_smooth + msg.ir*(1-minmax_smooth);
-		red_bar.max = 100; // Math.max(msg.red,red_bar.max)*minmax_smooth + msg.red*(1-minmax_smooth);
 	}
 	
 	if (typeof msg.bpm == 'number') {
