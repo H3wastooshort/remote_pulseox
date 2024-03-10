@@ -37,7 +37,7 @@ void setup() {
   }
 
   byte ledBrightness = 0x2F;  //Options: 0=Off to 255=50mA
-  byte sampleAverage = 32;    //Options: 1, 2, 4, 8, 16, 32
+  byte sampleAverage = 16;    //Options: 1, 2, 4, 8, 16, 32
   byte ledMode = 3;           //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
   int sampleRate = 800;       //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
   int pulseWidth = 215;       //Options: 69, 118, 215, 411
@@ -83,7 +83,7 @@ void setup() {
 }
 
 
-const float mid_smooth = 0.99;
+const float mid_smooth = 0.95;
 float red_mid = 50000;
 float ir_mid = 50000;
 void loop() {
@@ -116,12 +116,12 @@ void loop() {
   if (millis() - last_slow > 1000) {
     last_slow = millis();
     char buf[64];
-    snprintf(buf, sizeof(buf) - 2, "{\"temp\":%f,\"rssi\":%d}", particleSensor.readTemperature(), WiFi.RSSI());
+    snprintf(buf, sizeof(buf) - 2, "{\"temp\":%.1f,\"rssi\":%d}", particleSensor.readTemperature(), WiFi.RSSI());
     Serial.println(buf);
     ws.textAll(buf);
+    ws.cleanupClients();
   }
 
 
   //ArduinoOTA.handle();
-  //ws.cleanupClients();
 }

@@ -27,7 +27,9 @@ var last_ir=0;
 var last_red=0;
 var cnv_step = 0;
 
-const stretch = 8;
+var stretch = 8;
+
+var detune_scale = 10;
 
 function ws_msg(e) {
 	msg_cnt++;
@@ -39,6 +41,8 @@ function ws_msg(e) {
 		const center = cnv.height / 2;
 		let ir = msg.ir;
 		let red = msg.red;
+		
+		osc.detune.value=ir*detune_scale;
 		
 		ctx.fillRect(cnv_step,0,stretch,cnv.height);
 		
@@ -73,6 +77,12 @@ function ws_msg(e) {
 	if (typeof msg.bpm == 'number') {
 		bpm_text.innerText = msg.bpm;
 	}
+	if (typeof msg.rssi == 'number') {
+		rssi_text.innerText = msg.rssi;
+	}
+	if (typeof msg.temp == 'number') {
+		temp_text.innerText = msg.temp;
+	}
 }
 
 var ws;
@@ -87,3 +97,12 @@ function ws_connect() {
 	ws_text.style.color='#0FF';
 }
 ws_connect();
+
+
+
+const ac = new (window.AudioContext || window.webkitAudioContext)();
+const osc = ac.createOscillator();
+osc.frequency.value=100;
+osc.detune.maxValue=2000;
+osc.connect(ac.destination);
+osc.start();
