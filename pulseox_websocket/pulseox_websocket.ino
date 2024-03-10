@@ -1,6 +1,5 @@
 #include <Wire.h>
 #include <MAX30105.h>
-#include "heartRate.h"
 //#include "spo2_algorithm.h"
 #include <ArduinoOTA.h>
 #ifdef ESP32
@@ -65,7 +64,6 @@ void setup() {
     }
   }
 
-
   Serial.println();
   Serial.println(F("WiFi connected"));
 
@@ -84,52 +82,45 @@ void setup() {
   Serial.println(WiFi.localIP());
 }
 
+
+const float mid_smooth = 0.99;
+float red_mid = 50000;
+float ir_mid = 50000;
 void loop() {
   particleSensor.check();  //Check the sensor, read up to 3 samples
 
   while (particleSensor.available())  //do we have new data?
   {
-    auto red = particleSensor.getFIFORed();
-    auto ir = particleSensor.getFIFOIR();
+    uint32_t red = particleSensor.getFIFORed();
+    uint32_t ir = particleSensor.getFIFOIR();
 
-    char data[32];
-    snprintf(data, sizeof(data) - 2, "{\"red\":%d,\"ir\":%d}", red, ir);
+    if (abs(ir - ir_mid) > 1000) ir_mid = ir;
+    if (abs(red - red_mid) > 1000) red_mid = red;
+
+    red_mid = red_mid * mid_smooth + red * (1.0 - mid_smooth);
+    ir_mid = ir_mid * mid_smooth + ir * (1.0 - mid_smooth);
+
+    int32_t norm_red = red - red_mid;
+    int32_t norm_ir = ir - ir_mid;
+
+    char data[128];
+    snprintf(data, sizeof(data) - 2, "{\"red\":%d,\"mid_red\":%d,\"ir\":%d,\"mid_ir\":%d}", norm_red, uint32_t(red_mid), norm_ir, uint32_t(ir_mid));
 
     Serial.println(data);
     ws.textAll(data);
 
-    static const byte RATE_SIZE = 4;  //Increase this for more averaging. 4 is good.
-    static byte rates[RATE_SIZE];     //Array of heart rates
-    static byte rateSpot = 0;
-    static uint64_t lastBeat = 0;  //Time at which the last beat occurred
-
-    if (checkForBeat(ir) == true) {
-      //We sensed a beat!
-      uint64_t delta = millis() - lastBeat;
-      lastBeat = millis();
-
-      float beatsPerMinute = 60 / (delta / 1000.0);
-
-      if (beatsPerMinute < 255 && beatsPerMinute > 20) {
-        rates[rateSpot++] = (byte)beatsPerMinute;  //Store this reading in the array
-        rateSpot %= RATE_SIZE;                     //Wrap variable
-
-        //Take average of readings
-        uint beatAvg = 0;
-        for (byte x = 0; x < RATE_SIZE; x++)
-          beatAvg += rates[x];
-        beatAvg /= RATE_SIZE;
-
-        String bd = "{\"bpm\":";
-        bd += beatAvg;
-        bd += "}";
-        Serial.println(bd);
-        ws.textAll(bd);
-      }
-    }
-
     particleSensor.nextSample();
   }
+
+  static uint64_t last_slow = 0;
+  if (millis() - last_slow > 1000) {
+    last_slow = millis();
+    char buf[64];
+    snprintf(buf, sizeof(buf) - 2, "{\"temp\":%f,\"rssi\":%d}", particleSensor.readTemperature(), WiFi.RSSI());
+    Serial.println(buf);
+    ws.textAll(buf);
+  }
+
 
   //ArduinoOTA.handle();
   //ws.cleanupClients();

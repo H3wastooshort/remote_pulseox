@@ -27,13 +27,8 @@ var last_ir=0;
 var last_red=0;
 var cnv_step = 0;
 
-var minmax_smooth = 0.99;
-var mid_smooth = 0.99;
-
 const stretch = 8;
 
-var red_mid = 40000;
-var ir_mid = 40000;
 function ws_msg(e) {
 	msg_cnt++;
 	//console.log(e.data);
@@ -42,15 +37,8 @@ function ws_msg(e) {
 
 	if (typeof msg.ir == 'number' && typeof msg.red == 'number') {
 		const center = cnv.height / 2;
-		
-		if (Math.abs(msg.ir-ir_mid) > 1000) ir_mid = msg.ir;
-		if (Math.abs(msg.red-red_mid) > 1000) red_mid = msg.red;
-		
-		red_mid=red_mid*mid_smooth + msg.red*(1-mid_smooth);
-		ir_mid=ir_mid*mid_smooth + msg.ir*(1-mid_smooth);
-		
-		let ir = msg.ir - ir_mid;
-		let red = msg.red - red_mid;
+		let ir = msg.ir;
+		let red = msg.red;
 		
 		ctx.fillRect(cnv_step,0,stretch,cnv.height);
 		
@@ -67,7 +55,6 @@ function ws_msg(e) {
 		
 		cnv_step+=stretch;
 		cnv_step = cnv_step % cnv.width;
-		
 		
 		last_ir = ir_bar.value = ir;
 		//ir_txt.innerText = msg.ir;
