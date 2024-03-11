@@ -29,7 +29,7 @@ var cnv_step = 0;
 
 var stretch = 8;
 
-var detune_scale = 10;
+var detune_scale = 5;
 
 function ws_msg(e) {
 	msg_cnt++;
@@ -42,7 +42,7 @@ function ws_msg(e) {
 		let ir = msg.ir;
 		let red = msg.red;
 		
-		osc.detune.value=ir*detune_scale;
+		osc.detune.value=(ir-last_ir)*detune_scale;
 		
 		ctx.fillRect(cnv_step,0,stretch,cnv.height);
 		
@@ -67,6 +67,9 @@ function ws_msg(e) {
 		
 		//hist[hist_idx] = [msg.ir,msg.red];
 		//hist_idx = ++hist_idx % max_hist;
+		
+		
+		if (enable_log.checked) data_log.value+=ir+","+red+"\n";
 	}
 	
 	if (typeof msg.bpm == 'number') {

@@ -22,6 +22,10 @@ RSSI: <span id="rssi_text">?</span>dBm<br>
 Red: <meter id="red_bar" min="-200" max="200"></meter><br>
 IR:  <meter id="ir_bar" min="-200" max="200"></meter><br>
 <hr>
-<canvas id="data_plot" width="800" height="400"></canvas>
+<canvas id="data_plot" width="800" height="800"></canvas>
+<hr>
+<label for="enable_log">Enable Log</label> <input id="enable_log" type="checkbox" onclick='if (data_log.value.length==0) data_log.value="ir,red\n";'></input><br>
+<button onclick="">save log</button>
+<textarea id="data_log" ></textarea>
 </body>
 </html>

@@ -86,14 +86,38 @@ void setup() {
 const float mid_smooth = 0.95;
 float red_mid = 50000;
 float ir_mid = 50000;
+const float slope_smooth = 0.95;
+float ir_slope_mid = 0;
+const float hr_trig_fac = 1.25;
+uint64_t last_hb_time = 0;
 void loop() {
   particleSensor.check();  //Check the sensor, read up to 3 samples
 
   while (particleSensor.available())  //do we have new data?
   {
-    uint32_t red = particleSensor.getFIFORed();
-    uint32_t ir = particleSensor.getFIFOIR();
+    const uint32_t red = particleSensor.getFIFORed();
+    const uint32_t ir = particleSensor.getFIFOIR();
 
+    //slope
+    static uint32_t /*last_red = 0,*/ last_ir = 0;
+    const uint32_t ir_slope = abs((int32_t)ir - (int32_t)last_ir);
+
+    ir_slope_mid = ir_slope_mid * slope_smooth + ir_slope * (1 - slope_smooth);
+
+    if (ir_slope > ir_slope_mid * hr_trig_fac) {
+      uint64_t delta = millis() - last_hb_time;
+      last_hb_time = millis();
+      float bpm = 60000.0 / delta;  //1.0 / (delta /*ms*/ * 0.001 /*s/ms*/) * 60.0 /*s/min*/;
+      if (30 < bpm && bpm < 250) {
+        String bd = "{\"bpm\":";
+        bd += bpm;
+        bd += "}";
+        Serial.println(bd);
+        ws.textAll(bd);
+      }
+    }
+
+    //normalized values
     if (abs(ir - ir_mid) > 1000) ir_mid = ir;
     if (abs(red - red_mid) > 1000) red_mid = red;
 
@@ -109,6 +133,8 @@ void loop() {
     Serial.println(data);
     ws.textAll(data);
 
+    //last_red = red;
+    last_ir = ir;
     particleSensor.nextSample();
   }
 
