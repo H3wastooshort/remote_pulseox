@@ -87,8 +87,8 @@ const float mid_smooth = 0.95;
 float red_mid = 50000;
 float ir_mid = 50000;
 const float slope_smooth = 0.95;
-uint32_t ir_slope_max = 0;
-const float hr_trig_fac = 0.9;
+float ir_slope_mid = 0;
+const float hr_trig_fac = 0.75;
 uint64_t last_hb_time = 0;
 void loop() {
   particleSensor.check();  //Check the sensor, read up to 3 samples
@@ -100,12 +100,11 @@ void loop() {
 
     //slope
     static uint32_t /*last_red = 0,*/ last_ir = 0;
-    const uint32_t ir_slope = pow((int32_t)ir - (int32_t)last_ir, 2);
+    const uint32_t ir_slope = abs((int32_t)ir - (int32_t)last_ir);
 
-    ir_slope_max = ir_slope_max * ir_slope_max + ir_slope * (1 - slope_smooth);
-    ir_slope_max = max(ir_slope_max, ir_slope);
+    ir_slope_mid = ir_slope_mid * slope_smooth + ir_slope * (1 - slope_smooth);
 
-    if (ir_slope > ir_slope_max * hr_trig_fac) {
+    if (ir_slope > ir_slope_mid * hr_trig_fac) {
       uint64_t delta = millis() - last_hb_time;
       last_hb_time = millis();
       float bpm = 60000.0 / delta;  //1.0 / (delta /*ms*/ * 0.001 /*s/ms*/) * 60.0 /*s/min*/;
