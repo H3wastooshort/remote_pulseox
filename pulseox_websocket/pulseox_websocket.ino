@@ -86,7 +86,7 @@ void setup() {
 const float mid_smooth = 0.95;
 float red_mid = 50000;
 float ir_mid = 50000;
-uint32_t last_low_time = 0;
+uint64_t last_low_time = 0;
 int32_t ir_min = 0, ir_max = 0;
 float minmax_smooth = 0.95;
 float hr_detect_fac = 0.75;
@@ -114,9 +114,9 @@ void loop() {
     Serial.println(data);
     ws.textAll(data);
 
-    ir_max = ir_max * minmax_smooth + norm_ir * (1 - minmax_smooth);
+    ir_max = ir_max * minmax_smooth;
     ir_max = max(ir_max, norm_ir);
-    ir_min = ir_min * minmax_smooth + norm_ir * (1 - minmax_smooth);
+    ir_min = ir_min * minmax_smooth;
     ir_min = min(ir_min, norm_ir);
 
     if (last_low_time == 0)
