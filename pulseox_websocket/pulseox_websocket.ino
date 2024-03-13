@@ -88,10 +88,11 @@ const uint8_t MEAS_DIV = 5;
 const float mid_smooth = 0.95;
 float red_mid = 50000;
 float ir_mid = 50000;
-uint64_t last_low_time = 0;
+uint64_t last_high_time = 0;
 int32_t ir_min = 0, ir_max = 0;
 float minmax_smooth = 0.99;
 float hr_detect_fac = 0.5;
+bool waiting_for_low = true;
 void loop() {
   particleSensor.check();  //Check the sensor, read up to 3 samples
 
@@ -125,27 +126,28 @@ void loop() {
     ir_min = min(ir_min, norm_ir);
 
 
-    if (last_low_time == 0) {
+    if (waiting_for_low) {
       if (norm_ir < ir_min * hr_detect_fac) {
-        last_low_time = millis();
+        waiting_for_low = false;
         /*String d = "{\"llt\":";
-        d += last_low_time;
+        d += last_high_time;
         d += "}";
         Serial.println(d);
         ws.textAll(d);*/
       }
     } else {
       if (norm_ir > ir_max * hr_detect_fac) {
-        uint64_t delta = millis() - last_low_time;
+        waiting_for_low = true;
+        uint64_t delta = millis() - last_high_time;
         float bpm = 60000.0 / delta;  //1.0 / (delta /*ms*/ * 0.001 /*s/ms*/) * 60.0 /*s/min*/;
-                                      //if (30 < bpm && bpm < 250) {
-        String bd = "{\"bpm\":";
-        bd += bpm;
-        bd += "}";
-        Serial.println(bd);
-        ws.textAll(bd);
-        //}
-        last_low_time = 0;  //prevent multi-trig
+        if (30 < bpm && bpm < 250) {
+          String bd = "{\"bpm\":";
+          bd += bpm;
+          bd += "}";
+          Serial.println(bd);
+          ws.textAll(bd);
+        }
+        last_high_time = millis();
       }
     }
 
