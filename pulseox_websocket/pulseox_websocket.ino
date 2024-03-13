@@ -84,14 +84,14 @@ void setup() {
 }
 
 
-const uint8_t MEAS_DIV = 5;
+const uint8_t MEAS_DIV = 8;
 const float mid_smooth = 0.95;
 float red_mid = 50000;
 float ir_mid = 50000;
 uint64_t last_high_time = 0;
 int32_t ir_min = 0, ir_max = 0;
 float minmax_smooth = 0.99;
-float hr_detect_fac = 0.5;
+float hr_detect_fac = 0.75;
 bool waiting_for_low = true;
 void loop() {
   particleSensor.check();  //Check the sensor, read up to 3 samples
