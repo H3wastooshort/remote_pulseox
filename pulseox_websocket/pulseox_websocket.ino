@@ -16,8 +16,6 @@
 
 #include "secrets.h"
 
-constexpr uint8_t ws_sample_rate = 75;  //period in ms
-
 MAX30105 particleSensor;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -37,7 +35,7 @@ void setup() {
   }
 
   byte ledBrightness = 0x2F;  //Options: 0=Off to 255=50mA
-  byte sampleAverage = 16;    //Options: 1, 2, 4, 8, 16, 32
+  byte sampleAverage = 32;    //Options: 1, 2, 4, 8, 16, 32
   byte ledMode = 3;           //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
   int sampleRate = 800;       //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
   int pulseWidth = 215;       //Options: 69, 118, 215, 411
@@ -59,7 +57,10 @@ void setup() {
     if (tenths_searching > 300) {  //after 30 seconds
       //WiFi.mode(WIFI_AP);
       //WiFi.begin("esp_pulseox");
+      WiFi.mode(WIFI_AP);
       WiFi.softAP("pulseox8266");
+      Serial.println();
+      Serial.println(F("AP started"));
       break;
     }
   }
@@ -74,7 +75,7 @@ void setup() {
   server.addHandler(&ws);
   server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.htm");
   server.onNotFound([](AsyncWebServerRequest* request) {
-    request->send(LittleFS, "/www/404.htm");
+    request->send(200, "text/plain", "404\r\nNot found.");
   });
   server.begin();
 
@@ -88,7 +89,7 @@ float red_mid = 50000;
 float ir_mid = 50000;
 uint64_t last_low_time = 0;
 int32_t ir_min = 0, ir_max = 0;
-float minmax_smooth = 0.95;
+float minmax_smooth = 0.99;
 float hr_detect_fac = 0.75;
 void loop() {
   particleSensor.check();  //Check the sensor, read up to 3 samples
@@ -119,30 +120,36 @@ void loop() {
     ir_min = ir_min * minmax_smooth;
     ir_min = min(ir_min, norm_ir);
 
-    if (last_low_time == 0)
+
+    if (last_low_time == 0) {
       if (norm_ir < ir_min * hr_detect_fac) {
         last_low_time = millis();
+        /*String d = "{\"llt\":";
+        d += last_low_time;
+        d += "}";
+        Serial.println(d);
+        ws.textAll(d);*/
       }
-
-      else if (last_low_time != 0)
-        if (norm_ir > ir_max * hr_detect_fac) {
-          uint64_t delta = millis() - last_low_time;
-          last_low_time = 0;            //prevent multi-trig
-          float bpm = 60000.0 / delta;  //1.0 / (delta /*ms*/ * 0.001 /*s/ms*/) * 60.0 /*s/min*/;
-          if (30 < bpm && bpm < 250) {
-            String bd = "{\"bpm\":";
-            bd += bpm;
-            bd += "}";
-            Serial.println(bd);
-            ws.textAll(bd);
-          }
-        }
+    } else {
+      if (norm_ir > ir_max * hr_detect_fac) {
+        uint64_t delta = millis() - last_low_time;
+        float bpm = 60000.0 / delta;  //1.0 / (delta /*ms*/ * 0.001 /*s/ms*/) * 60.0 /*s/min*/;
+        //if (30 < bpm && bpm < 250) {
+          String bd = "{\"bpm\":";
+          bd += bpm;
+          bd += "}";
+          Serial.println(bd);
+          ws.textAll(bd);
+        //}
+        last_low_time = 0;            //prevent multi-trig
+      }
+    }
 
     particleSensor.nextSample();
   }
 
   static uint64_t last_slow = 0;
-  if (millis() - last_slow > 1000) {
+  if (millis() - last_slow > 10000) {
     last_slow = millis();
     char buf[64];
     snprintf(buf, sizeof(buf) - 2, "{\"temp\":%.1f,\"rssi\":%d}", particleSensor.readTemperature(), WiFi.RSSI());
