@@ -93,6 +93,8 @@ int32_t ir_min = 0, ir_max = 0;
 float minmax_smooth = 0.99;
 float hr_detect_fac = 0.75;
 bool waiting_for_low = true;
+float heartrate=70;
+float heartrate_smoothing=0.9;
 void loop() {
   particleSensor.check();  //Check the sensor, read up to 3 samples
 
@@ -141,8 +143,9 @@ void loop() {
         uint64_t delta = millis() - last_high_time;
         float bpm = 60000.0 / delta;  //1.0 / (delta /*ms*/ * 0.001 /*s/ms*/) * 60.0 /*s/min*/;
         if (30 < bpm && bpm < 250) {
+          heartrate = heartrate * heartrate_smoothing + bpm * (1-heartrate_smoothing);
           String bd = "{\"bpm\":";
-          bd += bpm;
+          bd += heartrate;
           bd += "}";
           Serial.println(bd);
           ws.textAll(bd);
